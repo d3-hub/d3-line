@@ -1,125 +1,100 @@
 <!doctype html>
-<html lang='en'>
+<html lang='ja'>
 <head>
     <meta charset='UTF-8'>
-    <title>Document</title>
+    <title>Line Chart</title>
     <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: #f1f2f3;
-        }
-
-        #chartArea {
-            margin: 4em auto 2rem;
-        }
-
-        .line {
+        .axis path,
+        .axis line{
             fill: none;
-            stroke: #f33155;
+            stroke: black;
+        }
+        .line{
+            fill: none;
+            stroke: blue;
             stroke-width: 2px;
         }
 
-        body { font: 12px Arial;}
-
-        .legend {
-            font-size: 16px;
-            font-weight: bold;
-            text-anchor: left;
+        .tick text{
+            font-size: 12px;
         }
+
+        .tick line{
+            opacity: 0.2;
+        }
+
     </style>
 </head>
 <body>
-<!-- 参考：https://codepen.io/bloom-dan/pen/mOmgam -->
-<div id='chartArea'></div>
-
-<h2>Simple Curved Line Chart</h2>
-<h4>Built with D3 v4</h4>
-<script src='https://cdnjs.cloudflare.com/ajax/libs/d3/4.2.2/d3.min.js'></script>
-<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js'></script>
+<!-- 参考：http://bl.ocks.org/hunzy/11110940 -->
+<script src='http://d3js.org/d3.v4.js'></script>
 <script>
-  const data = [
-    {'date': '1-May-16', 'close': 558.13},
-    {'date': '30-Apr-16', 'close': 553.98},
-    {'date': '27-Apr-16', 'close': 567},
-    {'date': '26-Apr-16', 'close': 589.7},
-    {'date': '25-Apr-16', 'close': 599},
-    {'date': '24-Apr-16', 'close': 630.28},
-    {'date': '23-Apr-16', 'close': 666.7},
-    {'date': '20-Apr-16', 'close': 634.98},
-    {'date': '19-Apr-16', 'close': 645.44},
-    {'date': '18-Apr-16', 'close': 643.34},
-    {'date': '17-Apr-16', 'close': 543.7},
-    {'date': '16-Apr-16', 'close': 580.13},
-    {'date': '13-Apr-16', 'close': 605.23},
-    {'date': '12-Apr-16', 'close': 622.77},
-    {'date': '11-Apr-16', 'close': 626.2},
-    {'date': '10-Apr-16', 'close': 628.44},
-    {'date': '9-Apr-16', 'close': 636.23},
-    {'date': '5-Apr-16', 'close': 633.68},
-    {'date': '4-Apr-16', 'close': 624.31},
-    {'date': '3-Apr-16', 'close': 629.32},
-    {'date': '2-Apr-16', 'close': 618.63},
-    {'date': '30-Mar-16', 'close': 599.55},
-    {'date': '29-Mar-16', 'close': 609.86},
-    {'date': '28-Mar-16', 'close': 617.62},
-    {'date': '27-Mar-16', 'close': 614.48},
-    {'date': '26-Mar-16', 'close': 606.98}
+  // 参考：http://bl.ocks.org/hunzy/11110940
+  const margin = {top: 20, right: 100, bottom: 30, left: 100}
+  const width = 960 - margin.left - margin.right
+  const height = 500 - margin.top - margin.bottom
+
+  const dataset = [
+    {x: 0, y: 5},
+    {x: 1, y: 8},
+    {x: 2, y: 13},
+    {x: 3, y: 12},
+    {x: 4, y: 16},
+    {x: 5, y: 21},
+    {x: 6, y: 18},
+    {x: 7, y: 23},
+    {x: 8, y: 24},
+    {x: 9, y: 28},
+    {x: 10, y: 35},
+    {x: 11, y: 30},
+    {x: 12, y: 32},
+    {x: 13, y: 36},
+    {x: 14, y: 40},
+    {x: 15, y: 38},
   ]
 
+  const xScale = d3.scaleLinear()
+    .domain([0, d3.max(dataset, d => d.x)])
+    .range([0, width])
 
-  const margin = {top: 20, right: 20, bottom: 30, left: 50}
-  const width = 420 - margin.left - margin.right
-  const height = 300 - margin.top - margin.bottom
+  const yScale = d3.scaleLinear()
+    .domain([0, d3.max(dataset, d => d.y)])
+    .range([height, 0])
 
-  const parseTime = d3.timeParse('%d-%b-%y')
+  const xAxis = d3.axisBottom(xScale)
+    .tickSizeInner(-height)
+    .tickSizeOuter(0)
+    .tickPadding(10);
 
+  const yAxis = d3.axisLeft(yScale)
+    .tickSizeInner(-width)
+    .tickSizeOuter (0)
+    .tickPadding(10);
 
-  const x = d3.scaleTime().range([0, width])
-  const y = d3.scaleLinear().range([height, 0])
+  const line = d3.line()
+    .x(d => xScale(d.x))
+    .y(d => yScale(d.y))
 
-
-  const valueline = d3.line()
-    .curve(d3.curveCatmullRomOpen)
-    .x(d => x(d.date))
-    .y(d => y(d.close))
-
-  
-  const svg = d3.select('#chartArea').append('svg')
+  const svg = d3.select('body')
+    .append('svg')
     .attr('width', width + margin.left + margin.right)
     .attr('height', height + margin.top + margin.bottom)
     .append('g')
     .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
-  const drawGraph = data => {
+  svg.append('g')
+    .attr('class', 'x axis')
+    .attr('transform', `translate(0, ${height})`)
+    .call(xAxis)
 
-    data.forEach(d => {
-      d.date = parseTime(d.date)
-      d.close = +d.close
-    })
+  svg.append('g')
+    .attr('class', 'y axis')
+    .call(yAxis)
 
-    x.domain(d3.extent(data, d => d.date))
-
-    y.domain([d3.min(data, d => d.close - margin.top), d3.max(data, d => d.close + margin.top)])
-
-    svg.append('path')
-      .data([data])
-      .attr('class', 'line')
-      .attr('d', valueline)
-
-    svg.append('g')
-      .attr('transform', `translate(0, ${height})`)
-      .call(d3.axisBottom(x).ticks(5))
-
-    svg.append('g')
-      .call(d3.axisLeft(y).ticks(8))
-
-  }
-
-  //drawGraph
-  drawGraph(data)
-
+  svg.append('path')
+    .data([dataset])
+    .attr('class', 'line')
+    .attr('d', line)
 
 </script>
 </body>

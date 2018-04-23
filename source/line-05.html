@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+        /*@import 'compass/reset';*/
+        /*@import 'compass/css3';*/
+        @import url(https://fonts.googleapis.com/css?family=Open+Sans:700,300);
+        html, body {
+            height: 100%;
+        }
+        body {
+            font-family: 'Open Sans', sans-serif;
+            font-size: 16px;
+            font-weight: 300;
+            line-height: 1em;
+            text-align: center;
+            color: #f0f0f0;
+            background-color: #252525;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin: 2em 0 0.5em;
+        }
+        h2 {
+            margin-bottom: 3em;
+        }
+        em, strong {
+            font-weight: 700;
+        }
+        input {
+            display: none;
+        }
+        .wrapper {
+            width: 37.5em;
+            display: inline-block;
+        }
+        #svg-chart {
+            height: 50vh;
+            width: 100%;
+            display: inline-block;
+            position: relative;
+            box-sizing: content-box;
+            transform: rotateX(180deg);
+        }
+        .circle {
+            transition: all 0.02s ease-in-out;
+        }
+        .white-line {
+            transform: translateY(2px);
+        }
+        .chart-items {
+            display: flex;
+            flex-direction: column;
+            overflow: auto;
+            max-height: 3em;
+            padding: 3em 0;
+            background-size: 100% 3em;
+            background-position: left 3em;
+            background-repeat: no-repeat;
+            box-shadow: inset 0 1px 1px -1px rgba(255, 255, 255, .25), inset 0 -1px 1px -1px rgba(255, 255, 255, .25);
+        }
+        .chart-items__item {
+            display: flex;
+            justify-content: space-between;
+            flex: 1 0 auto;
+            position: relative;
+            padding: 1em;
+            line-height: 1em;
+            color: rgba(255, 255, 255, .5);
+            border-bottom: 1px dashed rgba(255, 255, 255, .1);
+        }
+        .chart-items__item:last-child {
+            border: 0;
+        }
+
+    </style>
+</head>
+<body>
+<!-- 参考地址：https://codepen.io/rgg/pen/jqMxQE?editors=0010 -->
+
+<div class="wrapper">
+    <svg id="svg-chart" viewBox="-32 -16 660 416" class="svg-chart">
+        <defs>
+            <marker id="MidMarker" viewBox="0 0 20 20" refX="10" refY="10" markerWidth="10" markerHeight="10">
+                <circle cx="10" cy="10" r="1" fill="rgba(255, 255, 255, .3)"></circle>
+            </marker>
+            <pattern id="pattern-circle" x="0" y="0" width="5%" height="5%">
+                <circle cx="0" cy="0" r="2" fill="rgba(255,255,255, .25)"></circle>
+            </pattern>
+            <pattern id="pattern-line" x="0" y="0" width="5%" height="10%">
+                <rect width="1" height="50" fill="rgba(255,255,255, .05)"></rect>
+                <circle cx="0" cy="0" r="1" fill="rgba(255,255,255, .25)"></circle>
+            </pattern>
+            <filter id="f3" x="-120%" y="-120%" width="400%" height="400%">
+                <feOffset result="offOut" in="SourceGraphic" dx="0" dy="0"></feOffset>
+                <feGaussianBlur result="blurOut" in="offOut" stdDeviation="10"></feGaussianBlur>
+                <feBlend in="SourceGraphic" in2="blurOut" mode="multiply"></feBlend>
+            </filter>
+            <filter id="blur" x="0" y="0" width="200%" height="200%">
+                <feGaussianBlur result="blurOut" in="offOut" stdDeviation="10"></feGaussianBlur>
+                <feBlend in="SourceGraphic" in2="blurOut" mode="normal"></feBlend>
+            </filter>
+            <linearGradient id="stroke" gradientUnits="userSpaceOnUse" x1="0" y1="200" x2="600" y2="200">
+                <stop offset="0" style="stop-color:#FFBE20"></stop>
+                <stop offset="0.5" style="stop-color:#FF764A"></stop>
+                <stop offset="1" style="stop-color:#E31088"></stop>
+            </linearGradient>
+        </defs>
+        <g></g>
+        <circle xmlns="http://www.w3.org/2000/svg" cx="0" cy="0" r="6" fill="url(#stroke)" id="circle" filter="url(#f3)" class="circle"></circle>
+    </svg>
+        <ul id="chart-items" class="chart-items">
+        </ul>
+</div>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/snap.svg/0.3.0/snap.svg-min.js"></script>
+<script type="text/javascript">
+  (function ( $ ) {
+    $.fn.svgPath = function( options ) {
+
+      // This is the easiest way to have default options.
+      var settings = $.extend({
+          // These are the defaults.
+          id              : 'path-0',
+          color           : '#556b2f',
+          backgroundColor : 'white',
+          data            : [[0,0],[10,10]],
+          attributes      : [
+            ['fill','transparent'],
+            ['stroke', '#33aaee']
+          ]
+        }, options ),
+        chart           = this,
+        positions       = settings.data,
+        positionsArr    = [],
+        thisPos         = [],
+        widthUnit       = (10 / 100) * chart[0].clientWidth,
+        heightUnit      = (10 / 100) * chart[0].clientHeight;
+
+      // console.log(chart);
+
+      function drawSvgPath(properties, element, data, id) {
+        element.setAttribute('d', data);
+        element.setAttribute('id', id);
+        $.each(properties, function(i){
+          element.setAttribute(properties[i][0], properties[i][1]);
+        });
+        element.style.stroke = properties.stroke;
+        element.style.strokeWidth = properties.strokeWidth;
+        return element;
+      }
+
+      function svgPath(properties, element, data, id) {
+        this.properties = properties;
+        this.element = element;
+        this.data = data;
+        this.id = id;
+      }
+
+      for (var i = 0; i < positions.length; i++) {
+        thisPos = [];
+        thisPos.push(widthUnit * positions[i][0], heightUnit * positions[i][1]);
+        positionsArr.push(thisPos.join(','));
+        $('#chart-items').append('<li class="chart-items__item" data-position="' + positions[i] + '">Point ' + i + ' <span>' + positions[i] + '</span></li>');
+      }
+
+      // console.log(positionsArr);
+
+      positionsArr = 'M ' + positionsArr.join(' ');
+
+      var pathObj = new svgPath(settings.attributes, document.createElementNS("http://www.w3.org/2000/svg", 'path'), positionsArr, settings.id);
+
+      chart.find('g').append(drawSvgPath(pathObj.properties, pathObj.element, pathObj.data, pathObj.id));
+
+
+      var chartPath     = Snap("#"+pathObj.id),
+        chartDot      = Snap("#circle"),
+        chartList     = $('#chart-items'),
+        lenB          = chartPath.getTotalLength(),
+        dotPositions  = [{x: 0, y: 0}];
+
+      chartPath.attr({
+        strokeMiterLimit: "0",
+        "stroke-dasharray": lenB + " " + lenB,
+        "stroke-dashoffset": lenB
+      });
+      chartPath.animate({
+        "stroke-dashoffset": 0
+      }, 1741, mina.linear);
+
+      Snap.animate(0, lenB, function(val) {
+        position = chartPath.getPointAtLength(val);
+        dotPositions.push({x: position.x, y: position.y});
+      }, 1741, mina.linear);
+
+      chartListItems = chartList.find('li');
+      // chartList.css('padding').split('px ')[0]
+      chartListHeight = (chartListItems.length * chartList.css('padding').split('px ')[0]) - chartList.css('padding').split('px ')[0];
+
+
+      chartList.on('scroll', function(event){
+        result = Math.floor((event.target.scrollTop * 100) / chartListHeight);
+        chartDot.attr({
+          cx: dotPositions[result].x,
+          cy: dotPositions[result].y
+        });
+
+      });
+    };
+
+  }( jQuery ));
+
+  $('#svg-chart').svgPath({
+    data: [[0, 0],[1, 1],[2, 1],[3, 5],[4, 4],[5, 6],[6, 7],[7, 9],[8, 7],[9, 5],[10, 0]],
+    attributes: [
+      ['fill','url(#pattern-line)'],
+      ['stroke', 'url(#stroke)'],
+      ['stroke-width', '6'],
+      ['stroke-linecap','round'],
+      ['stroke-miterlimit','10' ],
+      ['stroke-linejoin','round'],
+      ['strokeMiterLimit', '10'],
+      ['strokeDasharray', '12 6'],
+      ['strokeDashOffset', '180'],
+      ['marker-mid', 'url(#MidMarker)'],
+      ['filter', 'url(#f3)']]
+  });
+</script>
+</body>
+</html>

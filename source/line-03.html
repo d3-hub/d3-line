@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+        body {
+            color: #9CA9B3;
+        }
+        .container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width  : 645px;
+            height : 200px;
+            margin-top: -100px;
+            margin-left: -470px;
+            border: 1px solid #e9edf0;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+<div class="container" id="cc"></div>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+    /**
+     *  地址：https://codepen.io/sonofjack/pen/BQGpLV
+     */
+
+
+    let data = [
+      {date: '2006-02-22', value: 950},
+      {date: '2006-08-22', value: 1000},
+      {date: '2007-01-11', value: 700},
+      {date: '2008-10-01', value: 1834},
+      {date: '2009-02-25', value: 1423},
+      {date: '2010-12-30', value: 1122},
+      {date: '2011-05-15', value: 948},
+      {date: '2012-04-02', value: 1938},
+      {date: '2013-08-19', value: 1245},
+      {date: '2013-11-11', value: 888}
+    ]
+
+    const parse = d3.timeParse('%Y-%m-%d')
+    const bisectDate = d3.bisector(d => d.date).left
+
+    // data manipulation first
+    data = data.map(datum => {
+      datum.date = parse(datum.date)
+
+      return datum
+    })
+
+    const d3Container = d3.select('.container')
+    const width = 645
+    const height = 200
+
+    const svg = d3Container.append('svg')
+      .attr('width', width * 0.8)
+      .attr('height', height)
+      .attr('class', 'path-container')
+
+    const svgElems = d3Container.append('svg')
+      .style('position', 'absolute')
+      .style('top', '0')
+      .style('left', '0')
+      .attr('width', width)
+      .attr('height', height)
+
+    const svgTooltips = d3Container.append('svg')
+      .style('position', 'absolute')
+      .style('top', '0')
+      .style('left', '0')
+      .style('border', '0px solid')
+      .attr('width', 235)
+      .attr('height', 110)
+      .style("display", "none")
+      .attr('class', 'tooltip-container')
+
+    const x = d3.scaleTime().range([0, width * 0.8])
+    const y = d3.scaleLinear().range([height, 0])
+
+    const area = d3.area()
+      .curve(d3.curveMonotoneX) // 平滑
+      .x(d => x(d.date))
+      .y0(height)
+      .y1(d => y(d.value))
+
+
+    const areaLine = d3.line()
+      .curve(d3.curveMonotoneX) // 平滑
+      .x(d => x(d.date))
+      .y(d => y(d.value))
+
+    const startData = data.map(d => ({
+      date: d.date,
+      value: 0
+    }))
+
+    // Compute the minimum and maximum date, and the maximum price.
+    x.domain([data[0].date, data[data.length - 1].date])
+
+    // hacky hacky hacky :(
+    const maxYPoint = d3.max(data, d => d.value) + 400
+    const lastYPoint = data[data.length - 1].value / maxYPoint * height
+    y.domain([0, maxYPoint])
+
+
+    // top line
+    const lineFunction = d3.line()
+      .x(d => d.x)
+      .y(d => d.y)
+
+    // area line
+    // 暂时不知道这个path是干嘛的，但是去掉的话，原点滑动效果就有问题了
+    const path = svg.append("svg:path")
+      .attr("d", areaLine(data))
+      .attr("fill", "none")
+      .attr("stroke", "none")
+      .attr("stroke-width", "2")
+
+    // 这个path是折线的path
+    svg.append('path')
+      .datum(startData)
+      .attr('d', areaLine)
+      .attr('class', 'path-line')
+      .attr("stroke", "#0FACF3")
+      .attr("stroke-width", "4")
+      .transition()
+      .duration(1500)
+      .attrTween('d', () => {
+        const interpolator = d3.interpolateArray(startData, data)
+
+        return t => area(interpolator(t))
+      })
+
+    // Add the area path
+    // 这个是折线下面的面积部分
+    svg.append('path')
+      .datum(startData)
+      .attr('d', area)
+      .attr("class", "area")
+      .attr("fill", "#d8edf7")
+      .transition()
+      .duration(1500)
+      .attrTween('d', () => {
+        const interpolator = d3.interpolateArray(startData, data)
+
+        return t => area(interpolator(t))
+      })
+
+    /*** ***********************************************/
+
+    // circle end of graph
+    svgElems.append("circle")
+      .datum(data)    // todo: 这里不需要指定datum
+      .attr("cy", height)
+      .attr("cx", width * 0.8)
+      .style("fill", "#0FACF3")
+      .attr("r", 4)
+      .transition()
+      .duration(1500)
+      .attr("cy", height - lastYPoint)
+
+
+    const focus = svgElems.append("g")
+      .style("display", "none") // 只有当鼠标在其上mouseover的时候才显示
+
+    // append the x line
+    focus.append("line")
+      .attr("class", "x")
+      .style("stroke", "#0FACF3")
+      .style("stroke-dasharray", "3,3")
+      .style("opacity", 0.5)
+      .attr("y1", 0)
+      .attr("y2", height)  // 这里的y1 y2其实一开始可以不需要指定
+
+    // append the y line
+    // todo: 这个可能是y轴的位置线，但是没显示出来
+    focus.append("line")
+      .attr("class", "y")
+      .style("stroke", "#0FACF3")
+      .style("stroke-dasharray", "3,3")
+      .style("opacity", 0.0)
+      .attr("x1", width)
+      .attr("x2", width)
+
+
+    // SHADOW
+    // 这里试验了下用.html的方式去创建一个defs,可行，而且方便直观
+    const defs = svgElems.append("defs")
+
+    // create filter with id #drop-shadow
+    // height=130% so that the shadow is not clipped
+    const filter = defs.append("filter")
+      .attr("id", "drop-shadow")
+      .attr("height", "130%")
+
+
+    filter.append("feGaussianBlur")
+      .attr("in", "SourceAlpha")
+      .attr("stdDeviation", 4)
+      .attr("result", "blur")
+    filter.append("feOffset")
+      .attr("in", "blur")
+      .attr("dx", 2)
+      .attr("dy", 2)
+      .attr("result", "offsetBlur")
+    filter.append("feFlood")
+      .attr("in", "offsetBlur")
+      .attr("flood-color", "#3d3d3d")
+      .attr("flood-opacity", "0.5")
+      .attr("result", "offsetColor")
+    filter.append("feComposite")
+      .attr("in", "offsetColor")
+      .attr("in2", "offsetBlur")
+      .attr("operator", "in")
+      .attr("result", "offsetBlur")
+
+    const feMerge = filter.append("feMerge")
+
+    feMerge.append("feMergeNode")
+      .attr("in", "offsetBlur")
+    feMerge.append("feMergeNode")
+      .attr("in", "SourceGraphic")
+    // END SHADOW
+
+
+    // 当鼠标移动的时候，改变整个svg的位置，而不是改变rect的位置
+    svgTooltips.append("rect")
+      .attr("x", 13)
+      .attr("y", 13)
+      .attr("height", 82)
+      .attr("width", 208)
+      .style("filter", "url(#drop-shadow)") // 加了一个滤镜
+      .attr("fill", "#ffffff")
+      .style("opacity", 0.8)
+      .attr("rx", 5)
+      .attr("ry", 5)
+
+    // place the value at the intersection
+    svgTooltips.append("text")
+      .attr("class", "tiptxt1")
+      .attr("x", 33)
+      .attr("y", 44)
+      .attr("text-anchor", "left")
+      .style("font-size", "13px")
+      .style("font-weight", "bold")
+      .style("fill", "#404247")
+      .text("14th Oct 2016")
+
+    svgTooltips.append("text")
+      .attr("class", "y2--")
+      .attr("x", 45)
+      .attr("y", 72)
+      .attr("text-anchor", "left")
+      .style("font-size", "12px")
+      .style("fill", "#6A7C87")
+      .text("Rate")
+
+    svgTooltips.append("text")
+      .attr("class", "tiptxt2")
+      .attr("x", 183)
+      .attr("y", 72)
+      .attr("text-anchor", "right")
+      .style("font-size", "12px")
+      .style("font-weight", "bold")
+      .style("fill", "#404247")
+      .text("16%")
+
+    // circle end of graph
+    svgTooltips.append("circle")
+      .datum(data)
+      .attr("cx", 36)
+      .attr("cy", 68)
+      .style("fill", "#0FACF3")
+      .attr("r", 3)
+
+    // append the circle at the intersection
+    focus.append("circle")
+      .attr("class", "y")
+      .style("fill", "#ffffff")
+      .style("stroke", "#0FACF3")
+      .style("stroke-width", "3px")
+      .attr("r", 5)
+
+    /*** *****************************************/
+
+    // 事件层
+
+    const mouseCover = svgElems.append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr('class', 'event')
+      .attr("width", width)
+      .attr("height", height)
+      .attr("fill", "none")
+      .attr('pointer-events', 'none')
+      .on("mouseover", () => {
+        focus.style("display", null)
+        svgTooltips.style("display", null)
+      })
+      .on("mouseout", () => {
+         focus.style("display", "none")
+         // 为何没生效
+         svgTooltips.style("display", null)
+      })
+      .on("mousemove", mousemove)
+
+    mouseCover
+      .transition().duration(1500)
+      .transition().attr('pointer-events', 'all') // pointer-events属性允许作者控制一个元素是否是鼠标事件的目标。这个属性用于指定在哪些情况下鼠标事件(如果有的话)应该“通过”一个元素，目标是“下面”元素（一个元素覆盖到下一个元素上）
+
+    function mousemove() {
+      const x0 = x.invert(d3.mouse(this)[0]) // x轴坐标, 时间值
+      const i = bisectDate(data, x0, 1) // 使用访问器和比较器二分查找, 判断当前的落点距离那个实际值更加接近，并且有限选择左边的值
+      const d0 = data[i - 1] // 测试发现i从1开始(上面第三个参数是0是1都一样), bisectDate方法的第三个参数可以指定开始index
+      const d1 = data[i]  // d0 d1是要插入的前后数据
+
+
+
+      // 根据鼠标位置控制tooltip显示在左边还是右边
+      if (d3.mouse(this)[0] < (width / 2)) {
+        svgTooltips
+          .transition()
+          .duration(150)
+          .ease(d3.easeLinear)
+          .style('left', 'auto')
+          .style('right', '0')
+      } else {
+        svgTooltips.transition()
+          .duration(150)
+          .ease(d3.easeLinear)
+          .style('left', '0')
+          .style('right', 'auto')
+      }
+
+
+      // 到最右边之后d1会是undefined
+      if (d1) {
+        const d = x0 - d0.date > d1.date - x0 ? d1 : d0
+        const formatDate = d3.timeFormat("%d %b %Y")
+        svgTooltips.select("text.tiptxt1").text(formatDate(d.date))
+        svgTooltips.select("text.tiptxt2").text(`${Math.round(d.value / 10)}%`)
+
+        // 这里这个path就是上面不知道干嘛用隐藏起来的path
+        const pathEl = path.node()
+//         console.log(pathEl)
+        const pathLength = pathEl.getTotalLength() // 这个是用来获取路径长度的，只适用于path，在path动画里用过这个
+        const BBox = pathEl.getBBox()  // 返回给定元素的边界框描述,这里是返回path元素的水平距离
+        const scale = pathLength / BBox.width
+        const offsetLeft = document.getElementById("cc").offsetLeft // 获取相对于父对象的左边距，这里基本是指导页面左边距了，因为父对象是body
+
+        // pageX距离页面左边的距离，所以这里的xc应该是鼠标位置距离图左边的距离
+        const xc = d3.event.pageX - (offsetLeft)
+        let beginning = xc
+        let end = pathLength
+        let target
+
+        // 没看懂这的平滑移动的算法
+        while (true) {
+          target = Math.floor((beginning + end) / 2)
+          pos = pathEl.getPointAtLength(target) // 获取给定长度length在path的坐标 (x, y)
+          // 如果target是末端/开始或者鼠标位置则break, why
+          if ((target === end || target === beginning) && pos.x !== xc) {
+            break
+          }
+          if (pos.x > xc) {
+            end = target
+          } else if (pos.x < xc) {
+            beginning = target
+          } else {
+            break
+          } //position found
+        }
+
+        // 选中移动的circe改变其位置
+        focus.select("circle.y").attr("transform", `translate(${pos.x},${pos.y})`)
+
+        // 改变移动circle下面线的位置
+        focus.select(".x")
+          .attr("transform", `translate(${pos.x},${pos.y})`)
+          .attr("y2", height - y(d.value))
+
+      }
+    }
+</script>
+</body>
+</html>

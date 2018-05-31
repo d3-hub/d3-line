@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+        body {
+            background-color:#115F9A;
+            overflow: hidden;
+        }
+
+        body,
+        html {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+
+        svg{
+            position:absolute;
+            width:100%;
+            height:100%;
+            visibility:hidden;
+
+        }
+
+
+        .mainSVG{
+            position:absolute;
+            width:100%;
+            height:100%;
+            visibility:hidden;
+            /*  top:200px; */
+            left:50%;
+            transform:translate(-50%, 0%);
+            overflow:visible;
+        }
+
+        #boxLabel{
+            text-anchor:middle;
+            fill:#115F9A;
+            font-size:21px;
+            user-select:none;
+            -webkit-user-select:none;
+            pointer-events:none;
+            font-family: 'Roboto', sans-serif;
+            font-weight:700;
+        }
+
+        .box{
+            opacity:0;
+        }
+        circle{
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+        }
+
+    </style>
+</head>
+<body>
+
+<svg class="mainSVG" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="visibility: visible;">
+    <defs>
+        <filter id="glow" x="-100%" y="-100%" width="350%" height="350%" color-interpolation-filters="sRGB">
+            <feGaussianBlur stdDeviation="5" result="coloredBlur"></feGaussianBlur>
+            <feOffset dx="0" dy="20" result="offsetblur"></feOffset>
+            <feFlood id="glowAlpha" flood-color="#000" flood-opacity="0.123"></feFlood>
+            <feComposite in2="offsetblur" operator="in"></feComposite>
+            <feMerge>
+                <feMergeNode></feMergeNode>
+                <feMergeNode in="SourceGraphic"></feMergeNode>
+            </feMerge>
+        </filter>
+    </defs>
+
+    <g id="graphTextGroup" opacity="0.5">
+        <text transform="translate(48.33 473.71)" font-size="18" fill="#fff" font-family="Roboto" font-weight="700" style="opacity: 1;">0</text>
+        <text transform="translate(48.33 301.71)" font-size="18" fill="#fff" font-family="Roboto" style="opacity: 1;">200</text>
+        <text transform="translate(48.33 101.71)" font-size="18" fill="#fff" font-family="Roboto" style="opacity: 1;">400</text>
+    </g>
+    <g id="horizontalLinesGroup" fill="none" stroke="#FFF" stroke-miterlimit="10">
+        <line x1="780" y1="481.7" opacity="0.1" x2="30" y2="481.7" data-svg-origin="30 481.70001220703125" transform="matrix(1,0,0,1,0,0)" style="opacity: 0.1; stroke-dashoffset: 0; stroke-dasharray: none;"></line>
+        <line x1="780" y1="381.7" opacity="0.1" x2="30" y2="381.7" data-svg-origin="30 381.70001220703125" transform="matrix(1,0,0,1,0,0)" style="opacity: 0.1; stroke-dashoffset: 0; stroke-dasharray: none;"></line>
+        <line x1="780" y1="281.7" opacity="0.1" x2="30" y2="281.7" data-svg-origin="30 281.70001220703125" transform="matrix(1,0,0,1,0,0)" style="opacity: 0.1; stroke-dashoffset: 0; stroke-dasharray: none;"></line>
+        <line x1="780" y1="181.7" opacity="0.1" x2="30" y2="181.7" data-svg-origin="30 181.6999969482422" transform="matrix(1,0,0,1,0,0)" style="opacity: 0.1; stroke-dashoffset: 0; stroke-dasharray: none;"></line>
+        <line x1="780" y1="81.7" opacity="0.1" x2="30" y2="81.7" data-svg-origin="30 81.69999694824219" transform="matrix(1,0,0,1,0,0)" style="opacity: 0.1; stroke-dashoffset: 0; stroke-dasharray: none;"></line>
+
+    </g>
+    <g id="uiGroup" filter="url(#glow)">
+        <path id="graphLine" fill="none" stroke-linecap="round" stroke="#F79819" stroke-width="4" stroke-miterlimit="10" d="M94.6,405.1
+	c62.9-95,109.2-111.7,142.4-103.8c44.6,10.6,74.8,67.9,143.4,63.8c35-2.1,32.7-17.4,73.9-21.7c77.7-8.2,105.9,44,136.3,13.6
+	c30.6-30.5,10.8-91.7,44.9-127.5c29.1-30.6,56.7,0,94.1-33.9c20.6-18.6,32.6-46.2,39.6-66.5" style="stroke-dashoffset: 2e-05; stroke-dasharray: none;"></path>
+        <g id="connectorGroup">
+            <line id="connector" x1="94.6" x2="94.6" y1="405.1" y2="405.1" stroke="#FFF"></line>
+        </g>
+        <g class="box" data-svg-origin="40 40" transform="matrix(0,0,0,0,94.6,355.1)" style="transform-origin: 0px 0px 0px; opacity: 0;">
+            <rect x="0" width="80" height="40" rx="20" ry="20" fill="#FFF"></rect>
+            <text id="boxLabel" x="40" y="28">76</text>
+        </g>
+    </g>
+
+    <circle id="nullDot" fill="red" cx="0" cy="0" r="0" data-svg-origin="0 0" transform="matrix(1,0,0,1,0,0)" style="transform-origin: 0px 0px 0px;"></circle>
+    <circle id="graphDot" fill="#FFF" cx="0" cy="0" r="10" data-svg-origin="0 0" transform="matrix(1,0,0,1,94.6,405.1)" style="transform-origin: 0px 0px 0px;"></circle>
+    <circle id="dragger" fill="rgba(240,240,240,0.1)" cx="0" cy="0" r="15" stroke="rgba(240,240,240,0.05)" stroke-width="10" data-svg-origin="0 0" transform="matrix(1,0,0,1,94.6,405.1)" style="transform-origin: 0px 0px 0px; cursor: move; touch-action: pan-y; user-select: none;"></circle>
+    <linearGradient id="boxGrad" gradientUnits="userSpaceOnUse" x1="65.7809" y1="25.7808" x2="14.2194" y2="25.7808" gradientTransform="matrix(-5.857245e-007 -1 1 -5.872379e-007 14.2192 65.7809)">
+        <stop offset="0.3858" style="stop-color:#E4386D"></stop>
+        <stop offset="0.7513" style="stop-color:#CF2156"></stop>
+    </linearGradient>
+
+</svg>
+
+</body>
+</html>
